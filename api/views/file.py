@@ -80,7 +80,7 @@ def create_file(request, *args, **kwargs):
             model.group = g
 
     model.save()
-    replication = Replication.objects.filter(sources__in)
+
     model.replications.add(replication)
 
     start_replication(model)
@@ -139,11 +139,12 @@ def destroy_file(request, pk):
 
 
 def start_replication(file):
-    node = Node.objects.get(id=settings.NODE_ID)
+    this_node = Node.objects.get(id=settings.NODE_ID)
     channel = rabbitmq.channel()
     channel.exchange_declare(exchange='file_tasks', exchange_type='direct')
-    for replication in Replication.objects.filter(sources__in=[file.source], replicate=True).exclude(node=node):
-        channel.basic_publish(exchange='file_tasks', routing_key=replication.node.id, body=file.id)
+    for node in Replication.objects.get(source=file.source, replicate=True).nodes:
+        if node != this_node:
+            channel.basic_publish(exchange='file_tasks', routing_key=node.id, body=file.id)
 
 
 def is_traversal_path(filename):

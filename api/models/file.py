@@ -13,7 +13,7 @@ class File(models.Model):
     path = models.CharField()
     source = models.ForeignKey('Source', on_delete=models.CASCADE, related_name='files')
     group = models.ForeignKey('FileGroup', on_delete=models.CASCADE, related_name='files', blank=True, null=True)
-    replications = models.ManyToManyField('Replication', blank=True, related_name='files')
+    replication = models.ForeignKey('Replication', on_delete=models.CASCADE, related_name='files')
     created_at = models.DateTimeField(blank=True)
 
     class Meta:

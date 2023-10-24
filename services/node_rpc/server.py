@@ -15,8 +15,8 @@ channel.queue_declare(queue='nodes-round-robin')
 def update_nodes():
     global round_robin_queues
     for source in Source.objects.all():
-        replications = Replication.objects.filter(sources__in=[source], replicate=True)
-        round_robin_queues[source.id] = itertools.cycle([replication.node.id for replication in replications])
+        replication = Replication.objects.get(source=source, replicate=True)
+        round_robin_queues[source.id] = itertools.cycle([node.id for node in replication.nodes])
 
 
 def on_request(ch, method, props, body):

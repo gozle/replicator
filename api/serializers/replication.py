@@ -3,13 +3,13 @@ from api.models import Source, Node
 
 
 class ReplicationSerializer(serializers.ModelSerializer):
-    node = serializers.PrimaryKeyRelatedField(queryset=Node.objects.all())
+    source = serializers.PrimaryKeyRelatedField(queryset=Node.objects.all())
+    nodes = serializers.SerializerMethodField()
     replicate = serializers.BooleanField(default=True)
-    sources = serializers.SerializerMethodField()
 
-    def get_sources(self, obj):
-        return Source(obj.sources, many=True).data
+    def get_nodes(self, obj):
+        return Node(obj.nodes, many=True).data
 
     class Meta:
         model = Source
-        fields = ('id', 'node', 'max_replicas')
+        fields = ('nodes', 'source', 'replicas')
