@@ -1,10 +1,20 @@
 import requests
+from time import sleep
 from django.conf import settings
 from api.models import Replication, File, Node
 from api.models.file import get_save_path
 
 
-def replication_worker():
+def worker():
+    while 1:
+        try:
+            replicate()
+        except Exception as e:
+            print(e)
+            sleep(1)
+
+
+def replicate():
     try:
         this_node = Node.objects.get(id=settings.NODE_ID)
     except Node.DoesNotExist:
@@ -22,6 +32,3 @@ def save_file(file):
     with open(path, mode="wb") as f:
         for chunk in response.iter_content(chunk_size=10 * 1024):
             f.write(chunk)
-
-
-replication_worker()
