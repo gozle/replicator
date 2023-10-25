@@ -4,7 +4,7 @@ from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
 from api.serializers import SourceSerializer, NodeSerializer
 from api.models import Source, Node
-from services.node_rpc import NodeRpcClient
+from services.node_rpc.client import NodeRpcClient
 
 __all__ = ['create_source', 'list_source', 'update_source', 'partial_update_source',
            'destroy_source', 'retrieve_source', 'get_source_node', 'list_source_nodes']

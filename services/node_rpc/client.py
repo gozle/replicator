@@ -40,9 +40,10 @@ class NodeRpcClient:
 
 
 # USAGE
-# rpc = NodeRpcClient()
-# source = 'gozle_video'
-# for i in range(10000):
-#     print(f" [x] Requesting node for source '{source}'")
-#     response = rpc.call(source)
-#     print(f" [.] Got {response}")
+if __name__ == '__main__':
+    rpc = NodeRpcClient()
+    source = 'gozle_video'
+    for i in range(10):
+        print(f" [x] Requesting node for source '{source}'")
+        response = rpc.call(source)
+        print(f" [.] Got {response}")

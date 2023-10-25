@@ -29,7 +29,7 @@ class FilePagination(PageNumberPagination):
 @api_view(['POST', ])
 def create_file(request, *args, **kwargs):
     try:
-        node = Node.objects.get(local_ip=settings.NODE_IP)
+        this_node = Node.objects.get(id=settings.NODE_ID)
     except Node.DoesNotExist:
         return Response(f'I don\'t exist...', status=500)
 
@@ -65,9 +65,6 @@ def create_file(request, *args, **kwargs):
     if is_traversal_path(abspath):
         return Response('Tryin\' to heck huh?', status=403)
 
-    if File.objects.filter(path=path):
-        return Response(f'File "{path}" already exists', status=403)
-
     create_group = bool(request.POST.get('create_group'))
     group_id = request.POST.get('group_id')
 
@@ -80,10 +77,7 @@ def create_file(request, *args, **kwargs):
             model.group = g
 
     model.save()
-
-    model.replications.add(replication)
-
-    start_replication(model)
+    model.replicas.add(this_node)
 
     serializer = FileSerializer(model)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -138,13 +132,12 @@ def destroy_file(request, pk):
     return Response(status=status.HTTP_204_NO_CONTENT)
 
 
-def start_replication(file):
-    this_node = Node.objects.get(id=settings.NODE_ID)
-    channel = rabbitmq.channel()
-    channel.exchange_declare(exchange='file_tasks', exchange_type='direct')
-    for node in Replication.objects.get(source=file.source, replicate=True).nodes:
-        if node != this_node:
-            channel.basic_publish(exchange='file_tasks', routing_key=node.id, body=file.id)
+# def start_replication(file):
+#     node = Node.objects.get(id=settings.NODE_ID)
+#     channel = rabbitmq.channel()
+#     channel.exchange_declare(exchange='file_replication_tasks', exchange_type='direct')
+#     for replication in Replication.objects.filter(source=file.source, replicate=True).exclude(node=node):
+#         channel.basic_publish(exchange='file_replication_tasks', routing_key=replication.node.id, body=file.id)
 
 
 def is_traversal_path(filename):
@@ -154,3 +147,4 @@ def is_traversal_path(filename):
     requested_path = os.path.normpath(os.path.join(data_dir, requested_path))
     common_prefix = os.path.commonpath([requested_path, data_dir])
     return str(common_prefix) != str(data_dir)
+

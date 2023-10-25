@@ -3,13 +3,10 @@ from api.models import Source, Node
 
 
 class ReplicationSerializer(serializers.ModelSerializer):
-    source = serializers.PrimaryKeyRelatedField(queryset=Node.objects.all())
-    nodes = serializers.SerializerMethodField()
+    node = serializers.PrimaryKeyRelatedField(queryset=Node.objects.all())
     replicate = serializers.BooleanField(default=True)
-
-    def get_nodes(self, obj):
-        return Node(obj.nodes, many=True).data
+    source = serializers.PrimaryKeyRelatedField(queryset=Source.objects.all())
 
     class Meta:
         model = Source
-        fields = ('nodes', 'source', 'replicas')
+        fields = ('node', 'replicate', 'source')

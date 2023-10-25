@@ -1,24 +1,20 @@
-import random
 from rest_framework import serializers
 from api.models import File, Source, FileGroup
-from urllib.parse import urljoin
+from api.serializers.node import NodeSerializer
 
 
 class FileSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     source = serializers.PrimaryKeyRelatedField(queryset=Source.objects.all())
     group = serializers.PrimaryKeyRelatedField(queryset=FileGroup.objects.all(), required=False)
-    url = serializers.SerializerMethodField('get_valid_url')
+    replicas = serializers.SerializerMethodField()
+    url = serializers.URLField()
     created_at = serializers.DateTimeField(required=False)
 
     @staticmethod
-    def get_valid_url(obj):
-        replications = obj.replications.all()
-        if not replications:
-            return None
-        replication = random.choice(replications)
-        return urljoin(replication.node.base_url, obj.node.path)
+    def get_replicas(obj):
+        return NodeSerializer(obj.replicas, many=True).data
 
     class Meta:
         model = File
-        fields = ('id', 'source', 'group', 'url', 'created_at')
+        fields = ('id', 'source', 'group', 'replicas', 'url', 'created_at')

@@ -7,6 +7,7 @@ class Node(models.Model):
     id = models.CharField(primary_key=True)
     local_ip = models.GenericIPAddressField(unique=True)
     api_port = models.PositiveIntegerField(default=14000)
+    static_url = models.URLField()
 
     @property
     def api_url(self):
