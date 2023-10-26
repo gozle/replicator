@@ -1,6 +1,9 @@
-from urllib.parse import urljoin
 import requests
+from urllib.parse import urljoin
 from django.db import models
+from api.models.replication import Replication
+from api.models.file import File
+from replicator import settings
 
 
 class Node(models.Model):
@@ -12,6 +15,12 @@ class Node(models.Model):
     @property
     def api_url(self):
         return f'http://{self.local_ip}:{self.api_port}/api'
+
+    def get_files(self):
+        replications = Replication.objects.filter(replicate=True, node=self)
+        files = (File.objects.filter(source__in=[repl.source for repl in replications])
+                 .exclude(replicas__in=[self]))
+        return files
 
     def file_exists(self, pk):
         try:

@@ -9,6 +9,7 @@ def worker():
     while 1:
         try:
             replicate()
+            sleep(3)
         except Exception as e:
             print(e)
             sleep(1)
@@ -20,8 +21,7 @@ def replicate():
     except Node.DoesNotExist:
         print(f'{settings.NODE_ID} does not exist')
         return
-    replications = Replication.objects.filter(replicate=True, node=this_node)
-    files = File.objects.filter(source__in=[repl.source for repl in replications]).exclude(replicas__in=[this_node])
+    files = this_node.get_files()
     for file in files:
         status = save_file(file)
         if status:
@@ -30,15 +30,19 @@ def replicate():
 
 def save_file(file):
     url = file.url
+    if not url:
+        print('no replicas', file.id, file.path)
+        return None
     try:
         response = requests.get(file.url, stream=True)
     except Exception as e:
-        print('[ERROR] static server not responds', url)
+        print('[ERROR] static server not responds', url, e)
         return None
     path = get_save_path(file)
     with open(path, mode="wb") as f:
         for chunk in response.iter_content(chunk_size=10 * 1024):
             f.write(chunk)
+    return True
 
 
 if __name__ == '__main__':
