@@ -1,7 +1,7 @@
 import requests
 from time import sleep
 from django.conf import settings
-from api.models import Replication, File, Node
+from api.models import Node
 from api.models.file import get_save_path
 
 
@@ -21,7 +21,7 @@ def replicate():
     except Node.DoesNotExist:
         print(f'{settings.NODE_ID} does not exist')
         return
-    files = this_node.get_files()
+    files = this_node.get_files_to_replicate()
     for file in files:
         status = save_file(file)
         if status:

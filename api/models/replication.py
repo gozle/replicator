@@ -8,3 +8,4 @@ class Replication(models.Model):
 
     class Meta:
         db_table = 'replications'
+        unique_together = [["node", "source"]]

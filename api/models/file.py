@@ -20,6 +20,9 @@ class File(models.Model):
 
     class Meta:
         db_table = 'files'
+        indexes = [
+            models.Index('path', name='path_idx'),
+        ]
 
     def save(self, *args, **kwargs):
         if not self.id:
