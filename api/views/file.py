@@ -1,22 +1,22 @@
 import os
 import pathlib
 import uuid
+from urllib.parse import urljoin
 from django.conf import settings
-from django.utils import timezone
+from django.http import HttpResponse
+from django.core.cache import cache
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework.pagination import PageNumberPagination
-
-from api.models.replication import Replication
 from api.serializers import FileSerializer
 from api.models import File, Node, Source, FileGroup
 from lib.mimetypes_v2 import mimetypes
-from replicator import rabbitmq
-
+from lib.utils import get_client_ip, generate_hmac
 
 __all__ = ['create_file', 'list_file', 'update_file', 'partial_update_file',
-           'destroy_file', 'retrieve_file', 'file_exists']
+           'destroy_file', 'retrieve_file', 'file_exists', 'retrieve_file_url',
+           'retrieve_protected_file']
 
 
 class FilePagination(PageNumberPagination):
@@ -47,35 +47,32 @@ def create_file(request, *args, **kwargs):
         print('**UNKNOWN TYPE ', file.content_type)
         return Response(f'Cannot determine extension for "{file.content_type}"', status=404)
 
+    model = File(source=source)
+
+    group_id = request.POST.get('group_id')
+    if group_id:
+        try:
+            model.group = FileGroup.objects.get(pk=group_id)
+        except FileGroup.DoesNotExist:
+            g = FileGroup(id=group_id or uuid.uuid4().hex)
+            g.save()
+            model.group = g
+
     filename = request.POST.get('filename') or uuid.uuid4().hex + ext
-    created_at = timezone.now()
     directory = os.path.join(source.directory,
-                             pathlib.Path(created_at.strftime('%Y/%m/%d')),
                              pathlib.Path(request.POST.get('path')),
+                             model.group.id if model.group else '',
                              )
     abspath = os.path.join(directory, filename)
     path = abspath.replace('\\', '/')
 
-    model = File(
-        file=file,
-        path=path,
-        source=source
-    )
-
     if is_traversal_path(abspath):
+        if model.group:
+            model.group.delete()
         return Response('Tryin\' to heck huh?', status=403)
 
-    create_group = bool(request.POST.get('create_group'))
-    group_id = request.POST.get('group_id')
-
-    try:
-        model.group = FileGroup.objects.get(pk=group_id)
-    except FileGroup.DoesNotExist:
-        if create_group:
-            g = FileGroup()
-            g.save()
-            model.group = g
-
+    model.file = file
+    model.path = path
     model.save()
     model.replicas.add(this_node)
 
@@ -110,6 +107,39 @@ def partial_update_file(request, pk=None):
         serializer.save()
         return Response(serializer.data)
     return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+
+@api_view(['GET', ])
+def retrieve_protected_file(request, hmac_key, filename):
+    response = HttpResponse()
+    ip = get_client_ip(request)
+    new_hmac_key = File.generate_hmac(ip)
+    response["Content-Disposition"] = f'attachment; filename={filename}'
+    response['X-Accel-Redirect'] = '/protected/' + filename
+    return Response()
+
+
+@api_view(['GET', ])
+def retrieve_file_url(request, pk):
+    try:
+        file = File.objects.get(pk=pk)
+    except File.DoesNotExist:
+        return Response('File not found', status=404)
+
+    group_permission = request.GET.get('group_permission')
+
+    if file.protected:
+        ip = get_client_ip(request)
+        path, filename = os.path.split(file.path)
+        if group_permission and file.group:
+            hmac_key = generate_hmac(ip, path)
+            cache.set(hmac_key, file.path, settings.FILE_CACHE_TIMEOUT)
+        replica = file.random_replica()
+        url = urljoin(replica.static_url, f'{hmac_key}/{os.path.split(file.path)[1]}')
+    else:
+        replica = file.random_replica()
+        url = urljoin(replica.static_url, file.path)
+    return Response(url)
 
 
 @api_view(['GET', ])

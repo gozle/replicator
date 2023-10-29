@@ -34,7 +34,7 @@ def save_file(file):
         print('no replicas', file.id, file.path)
         return None
     try:
-        response = requests.get(file.url, stream=True)
+        response = requests.get(file.private_url, stream=True)
     except Exception as e:
         print('[ERROR] static server not responds', url, e)
         return None

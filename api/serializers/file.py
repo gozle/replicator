@@ -6,9 +6,9 @@ from api.serializers.node import NodeSerializer
 class FileSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(read_only=True)
     source = serializers.PrimaryKeyRelatedField(queryset=Source.objects.all())
+    path = serializers.CharField()
     group = serializers.PrimaryKeyRelatedField(queryset=FileGroup.objects.all(), required=False)
     replicas = serializers.SerializerMethodField()
-    url = serializers.URLField()
     created_at = serializers.DateTimeField(required=False)
 
     @staticmethod
@@ -17,4 +17,4 @@ class FileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = File
-        fields = ('id', 'source', 'group', 'replicas', 'url', 'created_at')
+        fields = ('id', 'source', 'path', 'group', 'replicas', 'created_at')

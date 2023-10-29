@@ -9,7 +9,9 @@ if __name__ == '__main__':
     fs_scanner_thread = StoppableThread(target=fs_scanner)
 
     existence_scanner_thread.start()
+    print('Started database scanner')
     fs_scanner_thread.start()
+    print('Started filesystem scanner')
 
     try:
         while True:

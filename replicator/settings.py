@@ -20,6 +20,7 @@ DATA_DIR = BASE_DIR / 'data'
 FS = FileSystemStorage(location=DATA_DIR)
 
 NODE_ID = 'r127'
+FILE_CACHE_TIMEOUT = 60 * 60 * 24
 
 # requests user-agent header
 USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko)' \

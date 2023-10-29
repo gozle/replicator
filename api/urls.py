@@ -28,9 +28,14 @@ urlpatterns = [
 
     path('files', views.list_file),
     path('files/add', views.create_file),
+    path('files/<int:pk>/url', views.retrieve_file_url),
     path('files/<int:pk>/get', views.retrieve_file),
     path('files/<int:pk>/exists', views.file_exists),
     path('files/<int:pk>/update', views.update_file),
     path('files/<int:pk>/partial_update', views.partial_update_file),
     path('files/<int:pk>/delete', views.destroy_file),
+
+    path('protected/<str:hmac_key>/<str:filename>', views.retrieve_protected_file),
 ]
+
+

@@ -16,6 +16,7 @@ class File(models.Model):
     source = models.ForeignKey('Source', on_delete=models.CASCADE, related_name='files')
     group = models.ForeignKey('FileGroup', on_delete=models.CASCADE, related_name='files', blank=True, null=True)
     replicas = models.ManyToManyField('Node', related_name='files', blank=True)
+    protected = models.BooleanField(default=False)
     created_at = models.DateTimeField(blank=True)
 
     class Meta:
@@ -29,10 +30,17 @@ class File(models.Model):
             self.created_at = timezone.now()
         return super(File, self).save(*args, **kwargs)
 
-    @property
-    def url(self):
+    def random_replica(self):
         replicas = self.replicas.all()
         if not replicas:
             return None
         replica = random.choice(replicas)
-        return urljoin(replica.static_url, self.path)
+        return replica
+
+    @property
+    def private_url(self):
+        replicas = self.replicas.all()
+        if not replicas:
+            return None
+        replica = random.choice(replicas)
+        return urljoin(replica.static_private_url, self.path)
